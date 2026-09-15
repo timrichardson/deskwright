@@ -33,6 +33,7 @@ from .capture import (
 )
 from .config import KEYS, MODIFIERS
 from .errors import ToolError
+from .execution import session_bus_address
 from .hybrid import tool_ui_observe
 from .input import (
     YDOTOOL_SOCKET,
@@ -192,7 +193,10 @@ def tool_health(_: dict) -> dict:
                           f"POWER-SAVE ({_POWER_NAMES[power]})" if power in _POWER_NAMES
                           else "unknown")
     report["session_type"] = os.environ.get("XDG_SESSION_TYPE", "unset")
-    report["dbus_session"] = "set" if os.environ.get("DBUS_SESSION_BUS_ADDRESS") else "MISSING"
+    # Report the bus actually in use, not just the env var: hosts that spawn
+    # this server with a sanitized environment still reach the systemd user
+    # bus at $XDG_RUNTIME_DIR/bus (see execution.session_bus_address).
+    report["dbus_session"] = session_bus_address() or "MISSING"
     report["desktop"] = (os.environ.get("DESKWRIGHT_HEADLESS_NAME")
                          or ("headless" if os.environ.get("DESKWRIGHT_HEADLESS")
                              else "primary (the user's own screen)"))
